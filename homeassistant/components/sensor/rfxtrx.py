@@ -14,6 +14,7 @@ from homeassistant.util import slugify
 from homeassistant.components.rfxtrx import (
     ATTR_AUTOMATIC_ADD, ATTR_NAME, ATTR_FIREEVENT,
     CONF_DEVICES, ATTR_DATA_TYPE, DATA_TYPES, ATTR_ENTITY_ID)
+from homeassistant.const import CONF_UNIT_OF_MEASUREMENT
 
 DEPENDENCIES = ['rfxtrx']
 
@@ -31,7 +32,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     # pylint: disable=too-many-locals
     from RFXtrx import SensorEvent
     sensors = []
-    for packet_id, entity_info in config['devices'].items():
+    for packet_id, entity_info in config[CONF_DEVICES].items():
         event = rfxtrx.get_rfx_object(packet_id)
         device_id = "sensor_" + slugify(event.device.id_string.lower())
         if device_id in rfxtrx.RFX_DEVICES:
@@ -41,14 +42,16 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         sub_sensors = {}
         data_types = entity_info[ATTR_DATA_TYPE]
         if len(data_types) == 0:
-            data_types = ["Unknown"]
+            data_types = [""]
             for data_type in DATA_TYPES:
                 if data_type in event.values:
                     data_types = [data_type]
                     break
         for _data_type in data_types:
             new_sensor = RfxtrxSensor(None, entity_info[ATTR_NAME],
-                                      _data_type, entity_info[ATTR_FIREEVENT])
+                                      _data_type,
+                                      entity_info[CONF_UNIT_OF_MEASUREMENT],
+                                      entity_info[ATTR_FIREEVENT])
             sensors.append(new_sensor)
             sub_sensors[_data_type] = new_sensor
         rfxtrx.RFX_DEVICES[device_id] = sub_sensors
@@ -86,7 +89,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
         _LOGGER.info("Automatic add rfxtrx.sensor: %s",
                      pkt_id)
 
-        data_type = "Unknown"
+        data_type = ""
         for _data_type in DATA_TYPES:
             if _data_type in event.values:
                 data_type = _data_type
@@ -103,14 +106,17 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
 class RfxtrxSensor(Entity):
     """Representation of a RFXtrx sensor."""
-
-    def __init__(self, event, name, data_type, should_fire_event=False):
+    # pylint: disable= too-many-arguments
+    def __init__(self, event, name, data_type,
+                 unit_of_measurement=None, should_fire_event=False):
         """Initialize the sensor."""
         self.event = event
         self._name = name
         self.should_fire_event = should_fire_event
         self.data_type = data_type
-        self._unit_of_measurement = DATA_TYPES.get(data_type, '')
+        self._unit_of_measurement = unit_of_measurement
+        if self._unit_of_measurement is None:
+            self._unit_of_measurement = DATA_TYPES.get(data_type, '')
 
     def __str__(self):
         """Return the name of the sensor."""

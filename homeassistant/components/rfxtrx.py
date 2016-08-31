@@ -12,7 +12,8 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.util import slugify
 from homeassistant.const import EVENT_HOMEASSISTANT_STOP
 from homeassistant.helpers.entity import Entity
-from homeassistant.const import (ATTR_ENTITY_ID, TEMP_CELSIUS)
+from homeassistant.const import (ATTR_ENTITY_ID, TEMP_CELSIUS,
+                                 CONF_UNIT_OF_MEASUREMENT)
 
 REQUIREMENTS = ['pyRFXtrx==0.11.0']
 
@@ -104,6 +105,7 @@ DEVICE_SCHEMA_SENSOR = vol.Schema({
     vol.Optional(ATTR_FIREEVENT, default=False): cv.boolean,
     vol.Optional(ATTR_DATA_TYPE, default=[]):
         vol.All(cv.ensure_list, [vol.In(DATA_TYPES.keys())]),
+    vol.Optional(CONF_UNIT_OF_MEASUREMENT, default=None):  cv.string,
 })
 
 DEFAULT_SCHEMA = vol.Schema({
