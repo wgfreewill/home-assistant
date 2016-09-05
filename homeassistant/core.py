@@ -299,7 +299,7 @@ class EventBus(object):
 
         def remove_listener():
             """Remove the listener."""
-            self.remove_listener(event_type, listener)
+            self._remove_listener(event_type, listener)
 
         return remove_listener
 
@@ -323,7 +323,7 @@ class EventBus(object):
             # This will make sure the second time it does nothing.
             setattr(onetime_listener, 'run', True)
 
-            self.remove_listener(event_type, onetime_listener)
+            self._remove_listener(event_type, onetime_listener)
 
             listener(event)
 
@@ -331,7 +331,7 @@ class EventBus(object):
 
         return onetime_listener
 
-    def remove_listener(self, event_type, listener):
+    def _remove_listener(self, event_type, listener):
         """Remove a listener of a specific event_type."""
         with self._lock:
             try:
@@ -344,7 +344,8 @@ class EventBus(object):
             except (KeyError, ValueError):
                 # KeyError is key event_type listener did not exist
                 # ValueError if listener did not exist within event_type
-                pass
+                _LOGGER.warning('Unable to remove unknown listener %s',
+                                listener)
 
 
 class State(object):
@@ -688,14 +689,13 @@ class ServiceRegistry(object):
                 if call.data[ATTR_SERVICE_CALL_ID] == call_id:
                     executed_event.set()
 
-            self._bus.listen(EVENT_SERVICE_EXECUTED, service_executed)
+            unsub = self._bus.listen(EVENT_SERVICE_EXECUTED, service_executed)
 
         self._bus.fire(EVENT_CALL_SERVICE, event_data)
 
         if blocking:
             success = executed_event.wait(SERVICE_CALL_LIMIT)
-            self._bus.remove_listener(
-                EVENT_SERVICE_EXECUTED, service_executed)
+            unsub()
             return success
 
     def _event_to_service_call(self, event):
