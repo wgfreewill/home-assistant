@@ -1,11 +1,11 @@
-"""
+ """
 Venstar Colortouch thermostat.
 
 William Groh william@miamiconsultant.com
 """
 from homeassistant.components.thermostat import ThermostatDevice
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
-import json,urllib.request
+import json,urllib.request,urllib.parse
 
 CONF_IPADDRESS = 'ipaddress'
 
@@ -115,6 +115,15 @@ class ColorTouchThermostat(ThermostatDevice):
 
     def turn_fan_on(self):
         """Turn fan on."""
+        url = 'http://192.168.187.149/control'
+        params = urllib.urlencode({
+          'fan': 1
+        })
+        data = parse.urlencode(<your data dict>).encode()
+        req =  request.Request(<your url>, data=data) # this will make the method "POST"
+        resp = request.urlopen(req)
+
+
         self._is_fan_on = True
 
     def turn_fan_off(self):
