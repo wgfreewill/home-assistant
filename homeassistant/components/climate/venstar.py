@@ -1,4 +1,4 @@
- """
+"""
 Venstar Colortouch thermostat.
 
 William Groh william@miamiconsultant.com
@@ -23,12 +23,12 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
 class ColorTouchThermostat(ThermostatDevice):
     """Representation of a ColorTouch thermostat."""
 
-    def __init__(self, name, ip, mode, target_temperature, unit_of_measurement,
+    def __init__(self, name, ip, operation, target_temperature, unit_of_measurement,
                  away, current_temperature, is_fan_on):
         """Initialize the thermostat."""
         self._name = name
         self._ip = ip
-        self._mode = mode
+        self._operation = operation
         self._target_temperature = target_temperature
         self._unit_of_measurement = unit_of_measurement
         self._away = away
@@ -41,7 +41,7 @@ class ColorTouchThermostat(ThermostatDevice):
 
     @property
     def name(self):
-        url = 'http://192.168.187.149/query/info'
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
@@ -54,79 +54,117 @@ class ColorTouchThermostat(ThermostatDevice):
 
     @property
     def current_temperature(self):
-        url = 'http://192.168.187.149/query/info'
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        self._name = data['spacetemp']
+        self._current_temperature = data['spacetemp']
         return self._current_temperature
 
 
     @property
-    def mode(self):
-        url = 'http://192.168.187.149/query/info'
+    def operation(self):
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        self._name = data['mode']
-        return self._mode
+        self._mode = data['mode']
+        return self._operation
 
     @property
     def target_temperature(self):
         """Return the temperature we try to reach."""
-        url = 'http://192.168.187.149/query/info'
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        self._name = data['cooltemp']
+        self._target_temperature = data['cooltemp']
         return self._target_temperature
 
     @property
     def is_away_mode_on(self):
         """Return if away mode is on."""
-        url = 'http://192.168.187.149/query/info'
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        self._name = data['away']
+        self._away = data['away']
         return self._away
 
     @property
     def is_fan_on(self):
         """Return true if the fan is on."""
-        url = 'http://192.168.187.149/query/info'
+        url = 'http://%s/query/info' % self._ip
         response = urllib.request.urlopen(url)
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        self._name = data['fanstate']
+        self._is_fan_on = data['fanstate']
         return self._is_fan_on
 
     def set_temperature(self, temperature):
         """Set new target temperature."""
+        heattemp = temperature - 3
+        cooltemp = temperature
+        url = 'http://%s/control' % self._ip
+        params = {
+          'cooltemp': cooltemp,
+          'heattemp': heattemp
+        }
+        data = urllib.parse.urlencode(params).encode("utf-8")
+        req = urllib.request.Request(url, data)
+        resp = urllib.request.urlopen(req)
+        """output = resp.read()
+        print(output)"""
         self._target_temperature = temperature
 
     def turn_away_mode_on(self):
         """Turn away mode on."""
+        url = 'http://%s/control' % self._ip
+        params = {
+          'away': 1
+        }
+        data = urllib.parse.urlencode(params).encode("utf-8")
+        req = urllib.request.Request(url, data)
+        resp = urllib.request.urlopen(req)
+        output = resp.read()
+        print(output)
         self._away = True
 
     def turn_away_mode_off(self):
         """Turn away mode off."""
+        url = 'http://%s/control' % self._ip
+        params = {
+          'away': 0
+        }
+        data = urllib.parse.urlencode(params).encode("utf-8")
+        req = urllib.request.Request(url, data)
+        resp = urllib.request.urlopen(req)
+        output = resp.read()
+        print(output)
         self._away = False
 
     def turn_fan_on(self):
         """Turn fan on."""
-        url = 'http://192.168.187.149/control'
-        params = urllib.urlencode({
+        url = 'http://%s/control' % self._ip
+        params = {
           'fan': 1
-        })
-        data = parse.urlencode(<your data dict>).encode()
-        req =  request.Request(<your url>, data=data) # this will make the method "POST"
-        resp = request.urlopen(req)
-
-
+        }
+        data = urllib.parse.urlencode(params).encode("utf-8")
+        req = urllib.request.Request(url, data)
+        resp = urllib.request.urlopen(req)
+        output = resp.read()
+        print(output)
         self._is_fan_on = True
 
     def turn_fan_off(self):
         """Turn fan off."""
+        url = 'http://%s/control' % self._ip
+        params = {
+          'fan': 0
+        }
+        data = urllib.parse.urlencode(params).encode("utf-8")
+        req = urllib.request.Request(url, data)
+        resp = urllib.request.urlopen(req)
+        output = resp.read()
+        print(output)
         self._is_fan_on = False
-                                                                                                   
