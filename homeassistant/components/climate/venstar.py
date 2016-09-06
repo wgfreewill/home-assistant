@@ -2,6 +2,13 @@
 Venstar Colortouch thermostat.
 
 William Groh william@miamiconsultant.com
+
+Usage in configuration.yaml
+
+thermostat:
+  platform: venstar
+  ipaddress: YOUR.VENSTAR.IP.ADDR
+
 """
 from homeassistant.components.thermostat import ThermostatDevice
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
